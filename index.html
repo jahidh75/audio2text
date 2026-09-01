@@ -3,85 +3,447 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio File to Text (Direct Cloud)</title>
+    <title>VoiceScript AI - Audio to Text Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
-        .box { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        h2 { text-align: center; margin-bottom: 5px; color: #222; font-size: 22px; }
-        p.sub { text-align: center; font-size: 13px; color: #666; margin-bottom: 18px; }
-        
-        .field { margin-bottom: 14px; }
-        label { display: block; font-size: 13px; margin-bottom: 6px; color: #444; font-weight: 600; }
-        input[type="file"] { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; background: #fff; }
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #090d16;
+            --card-bg: rgba(22, 27, 44, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
 
-        textarea { width: 100%; height: 200px; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; line-height: 1.6; resize: none; outline: none; margin-top: 10px; }
-        textarea:focus { border-color: #007bff; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
 
-        .btn-start { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; background: #28a745; color: white; margin: 15px 0 10px 0; transition: 0.2s; }
-        .btn-start:hover { background: #218838; }
-        .btn-start:disabled { background: #6c757d; cursor: not-allowed; }
+        body {
+            background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg) 60%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 15px;
+            color: var(--text-main);
+        }
 
-        .btn-action { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn-action button { background: #6c757d; color: white; font-size: 13px; padding: 10px; border: none; border-radius: 6px; cursor: pointer; }
-        .btn-action button:hover { background: #5a6268; }
+        .container {
+            width: 100%;
+            max-width: 640px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
 
-        #status { font-size: 13px; text-align: center; margin: 10px 0; font-weight: 600; color: #0c5460; }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            margin-bottom: 8px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        /* ড্র্যাগ অ্যান্ড ড্রপ জোন */
+        .dropzone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 25px 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .dropzone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .drop-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+            color: #818cf8;
+        }
+
+        .dropzone-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .dropzone-subtext {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* অডিও প্রিভিউ */
+        .audio-preview-box {
+            display: none;
+            margin-top: 15px;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .audio-preview-box.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-details {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #e2e8f0;
+            max-width: 70%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        audio {
+            width: 100%;
+            height: 38px;
+            filter: invert(0.9) hue-rotate(180deg);
+        }
+
+        /* কন্ট্রোল গ্রিড */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        select {
+            width: 100%;
+            padding: 11px 14px;
+            background: rgba(15, 20, 35, 0.8);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        /* অ্যাকশন বাটন */
+        .btn-main {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-main:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-main:disabled {
+            background: #334155;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* স্ট্যাটাস ও অ্যানিমেশন */
+        .status-container {
+            margin: 12px 0;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            min-height: 20px;
+        }
+
+        .status-container.processing {
+            color: #fbbf24;
+        }
+
+        .status-container.success {
+            color: var(--success);
+        }
+
+        .status-container.error {
+            color: var(--danger);
+        }
+
+        /* টেক্সট এরিয়া */
+        .output-wrapper {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            background: rgba(10, 14, 26, 0.7);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #e2e8f0;
+            resize: none;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .bottom-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: #cbd5e1;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>Audio to Text Converter</h2>
-    <p class="sub">সরাসরি ফাইল আপলোড করে বাংলা টেক্সট রূপান্তর</p>
-
-    <div class="field">
-        <label for="audioFile">অডিও ফাইল সিলেক্ট করুন (mp3, wav, m4a):</label>
-        <input type="file" id="audioFile" accept="audio/*" />
+<div class="container">
+    <div class="header">
+        <span class="badge">AI Speech Engine</span>
+        <h1>VoiceScript Studio</h1>
+        <p>অডিও ফাইল থেকে সরাসরি টেক্সট কনভার্টার</p>
     </div>
 
-    <button id="btn" class="btn-start" onclick="processAudio()">টেক্সট তৈরি করুন</button>
-    <div id="status">ফাইল নির্বাচন করে বাটনে চাপুন</div>
+    <!-- ড্র্যাগ অ্যান্ড ড্রপ জোন -->
+    <div class="dropzone" id="dropzone">
+        <input type="file" id="audioFile" accept="audio/*" />
+        <div class="drop-icon">🎧</div>
+        <div class="dropzone-text" id="drop-text">এখানে অডিও ফাইল ড্রপ করুন অথবা ব্রাউজ করুন</div>
+        <div class="dropzone-subtext">MP3, WAV, M4A, OGG (সর্বোচ্চ ২৫ MB)</div>
+    </div>
 
-    <textarea id="output" placeholder="অডিও থেকে বের হওয়া টেক্সট এখানে আসবে..."></textarea>
+    <!-- অডিও প্রিভিউ প্লেয়ার -->
+    <div class="audio-preview-box" id="previewBox">
+        <div class="file-details">
+            <span class="file-name" id="fileName">audio.mp3</span>
+            <span id="fileSize">0 MB</span>
+        </div>
+        <audio id="audioPlayer" controls></audio>
+    </div>
 
-    <div class="btn-action">
-        <button onclick="copyText()">📋 কপি করুন</button>
-        <button onclick="downloadText()">⬇️ টেক্সট সেভ</button>
+    <div class="controls-grid">
+        <div>
+            <label for="langSelect">অডিওর ভাষা:</label>
+            <select id="langSelect">
+                <option value="bn" selected>🇧🇩 বাংলা (Bangla)</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="auto">🌐 অটো ডিটেক্ট (Auto Detect)</option>
+            </select>
+        </div>
+    </div>
+
+    <button id="transcribeBtn" class="btn-main" onclick="transcribeAudio()">
+        <span>⚡ টেক্সটে রূপান্তর করুন</span>
+    </button>
+
+    <div class="status-container" id="status">ফাইল নির্বাচন করে কনভার্ট চাপুন</div>
+
+    <div class="output-wrapper">
+        <textarea id="output" placeholder="ট্রান্সক্রিপ্ট করা টেক্সট এখানে প্রদর্শিত হবে..."></textarea>
+    </div>
+
+    <div class="bottom-actions">
+        <button class="btn-secondary" onclick="copyOutput()">📋 কপি করুন</button>
+        <button class="btn-secondary" onclick="downloadOutput()">⬇️ টেক্সট সেভ (.txt)</button>
+        <button class="btn-secondary" onclick="clearOutput()">🗑️ পরিষ্কার করুন</button>
     </div>
 </div>
 
 <script>
-    const API_KEY = "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";
+    const GROQ_API_KEY = "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";
 
-    async function processAudio() {
-        const fileInput = document.getElementById('audioFile');
-        const btn = document.getElementById('btn');
-        const status = document.getElementById('status');
-        const output = document.getElementById('output');
+    const fileInput = document.getElementById('audioFile');
+    const dropzone = document.getElementById('dropzone');
+    const dropText = document.getElementById('drop-text');
+    const previewBox = document.getElementById('previewBox');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const fileNameDisplay = document.getElementById('fileName');
+    const fileSizeDisplay = document.getElementById('fileSize');
+    const langSelect = document.getElementById('langSelect');
+    const transcribeBtn = document.getElementById('transcribeBtn');
+    const statusText = document.getElementById('status');
+    const outputArea = document.getElementById('output');
 
-        if (!fileInput.files || fileInput.files.length === 0) {
-            alert('অনুগ্রহ করে একটি অডিও ফাইল বেছে নিন!');
+    let currentFile = null;
+
+    // ফাইল হ্যান্ডলিং ও প্রিভিউ
+    function handleFile(file) {
+        if (!file) return;
+        currentFile = file;
+
+        fileNameDisplay.innerText = file.name;
+        fileSizeDisplay.innerText = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+        audioPlayer.src = URL.createObjectURL(file);
+        previewBox.classList.add('active');
+        dropText.innerText = `নির্বাচিত: ${file.name}`;
+
+        statusText.innerText = 'অডিও প্রস্তুত! কনভার্ট বাটনে চাপুন।';
+        statusText.className = 'status-container';
+    }
+
+    fileInput.addEventListener('change', (e) => {
+        handleFile(e.target.files[0]);
+    });
+
+    // ড্র্যাগ অ্যান্ড ড্রপ ইভেন্ট
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    // API কল ও প্রসেসিং
+    async function transcribeAudio() {
+        if (!currentFile) {
+            alert('অনুগ্রহ করে আগে একটি অডিও ফাইল নির্বাচন করুন!');
             return;
         }
 
-        const file = fileInput.files[0];
+        if (currentFile.size > 25 * 1024 * 1024) {
+            alert('ফাইলের আকার ২৫ MB-এর নিচে হতে হবে!');
+            return;
+        }
 
-        btn.disabled = true;
-        status.innerText = 'অডিও বিশ্লেষণ হচ্ছে... ৫-১০ সেকেন্ড সময় লাগতে পারে';
-        output.value = '';
+        transcribeBtn.disabled = true;
+        statusText.innerText = 'অডিও বিশ্লেষণ ও টেক্সট তৈরি হচ্ছে...';
+        statusText.className = 'status-container processing';
 
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', currentFile);
         formData.append('model', 'whisper-large-v3');
-        formData.append('language', 'bn'); // বাংলা ভাষা ফিক্সড
         formData.append('response_format', 'json');
+
+        const selectedLang = langSelect.value;
+        if (selectedLang !== 'auto') {
+            formData.append('language', selectedLang);
+        }
 
         try {
             const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${API_KEY}`
+                    'Authorization': `Bearer ${GROQ_API_KEY}`
                 },
                 body: formData
             });
@@ -89,34 +451,41 @@
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.error ? data.error.message : 'ট্রান্সক্রিপশনে ত্রুটি হয়েছে');
+                throw new Error(data.error?.message || 'সার্ভার সমস্যা দেখা দিয়েছে');
             }
 
-            output.value = data.text;
-            status.innerText = '✅ রূপান্তর সফল হয়েছে!';
+            outputArea.value = data.text;
+            statusText.innerText = '✅ রূপান্তর সফল হয়েছে!';
+            statusText.className = 'status-container success';
         } catch (err) {
-            status.innerText = '❌ রূপান্তর ব্যর্থ হয়েছে';
-            alert('সমস্যা: ' + err.message);
+            statusText.innerText = '❌ রূপান্তর ব্যর্থ হয়েছে';
+            statusText.className = 'status-container error';
+            alert('ত্রুটি: ' + err.message);
         } finally {
-            btn.disabled = false;
+            transcribeBtn.disabled = false;
         }
     }
 
-    function copyText() {
-        const text = document.getElementById('output').value;
-        if (!text.trim()) return alert('কপি করার মতো টেক্সট নেই!');
-        navigator.clipboard.writeText(text);
-        alert('টেক্সট কপি হয়েছে!');
+    function copyOutput() {
+        if (!outputArea.value.trim()) return alert('কপি করার মতো টেক্সট নেই!');
+        navigator.clipboard.writeText(outputArea.value);
+        alert('টেক্সট সফলভাবে কপি হয়েছে!');
     }
 
-    function downloadText() {
-        const text = document.getElementById('output').value;
-        if (!text.trim()) return alert('ডাউনলোড করার মতো টেক্সট নেই!');
+    function downloadOutput() {
+        const text = outputArea.value.trim();
+        if (!text) return alert('ডাউনলোড করার মতো কোনো টেক্সট নেই!');
         const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `audio_text_${Date.now()}.txt`;
+        a.download = `transcript_${Date.now()}.txt`;
         a.click();
+    }
+
+    function clearOutput() {
+        outputArea.value = '';
+        statusText.innerText = 'টেক্সট ক্লিয়ার করা হয়েছে';
+        statusText.className = 'status-container';
     }
 </script>
 
