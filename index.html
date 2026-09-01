@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Audio to Text Pro</title>
+    <title>Audio File to Text (Direct Cloud)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
@@ -13,178 +13,110 @@
         
         .field { margin-bottom: 14px; }
         label { display: block; font-size: 13px; margin-bottom: 6px; color: #444; font-weight: 600; }
-        input[type="file"], select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; outline: none; background: #fff; }
+        input[type="file"] { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; background: #fff; }
 
-        audio { width: 100%; margin-top: 8px; }
-
-        textarea { width: 100%; height: 180px; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; line-height: 1.6; resize: none; outline: none; margin-top: 10px; }
+        textarea { width: 100%; height: 200px; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; line-height: 1.6; resize: none; outline: none; margin-top: 10px; }
         textarea:focus { border-color: #007bff; }
 
-        .btn-controls { display: flex; gap: 10px; margin: 15px 0 10px 0; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        
-        .btn-start { background: #28a745; color: white; }
+        .btn-start { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; background: #28a745; color: white; margin: 15px 0 10px 0; transition: 0.2s; }
         .btn-start:hover { background: #218838; }
-        .btn-stop { background: #dc3545; color: white; display: none; }
-        .btn-stop:hover { background: #c82333; }
+        .btn-start:disabled { background: #6c757d; cursor: not-allowed; }
 
-        .btn-action { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; margin-top: 10px; }
-        .btn-action button { background: #6c757d; color: white; font-size: 12px; padding: 10px 4px; border-radius: 6px; }
+        .btn-action { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-action button { background: #6c757d; color: white; font-size: 13px; padding: 10px; border: none; border-radius: 6px; cursor: pointer; }
         .btn-action button:hover { background: #5a6268; }
 
-        #status { font-size: 13px; text-align: center; margin: 8px 0; font-weight: 600; color: #0c5460; }
-        .listening { color: #dc3545 !important; }
+        #status { font-size: 13px; text-align: center; margin: 10px 0; font-weight: 600; color: #0c5460; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>Google Engine Audio to Text</h2>
-    <p class="sub">গুগলের নির্ভুল বাংলা ইঞ্জিনে অডিও ফাইল ট্রান্সক্রিপশন</p>
+    <h2>Audio to Text Converter</h2>
+    <p class="sub">সরাসরি ফাইল আপলোড করে বাংলা টেক্সট রূপান্তর</p>
 
     <div class="field">
-        <label for="audioInput">অডিও ফাইল সিলেক্ট করুন:</label>
-        <input type="file" id="audioInput" accept="audio/*" />
-        <audio id="player" controls></audio>
+        <label for="audioFile">অডিও ফাইল সিলেক্ট করুন (mp3, wav, m4a):</label>
+        <input type="file" id="audioFile" accept="audio/*" />
     </div>
 
-    <div class="field">
-        <label for="lang">ভাষা:</label>
-        <select id="lang">
-            <option value="bn-BD" selected>🇧🇩 বাংলা (বাংলাদেশ)</option>
-            <option value="bn-IN">🇮🇳 বাংলা (ভারত)</option>
-            <option value="en-US">🇺🇸 English</option>
-        </select>
-    </div>
+    <button id="btn" class="btn-start" onclick="processAudio()">টেক্সট তৈরি করুন</button>
+    <div id="status">ফাইল নির্বাচন করে বাটনে চাপুন</div>
 
-    <div class="btn-controls">
-        <button id="runBtn" class="btn-start" onclick="startAudioTranscribe()">▶️ শুরু করুন</button>
-        <button id="stopBtn" class="btn-stop" onclick="stopAudioTranscribe()">⏹️ বন্ধ করুন</button>
-    </div>
-
-    <div id="status">একটি অডিও ফাইল নির্বাচন করুন</div>
-
-    <textarea id="result" placeholder="ট্রান্সক্রিপ্ট করা টেক্সট এখানে একের পর এক উঠবে..."></textarea>
+    <textarea id="output" placeholder="অডিও থেকে বের হওয়া টেক্সট এখানে আসবে..."></textarea>
 
     <div class="btn-action">
         <button onclick="copyText()">📋 কপি করুন</button>
         <button onclick="downloadText()">⬇️ টেক্সট সেভ</button>
-        <button onclick="clearText()">🗑️ মুছুন</button>
     </div>
 </div>
 
 <script>
-    const audioInput = document.getElementById('audioInput');
-    const player = document.getElementById('player');
-    const langSelect = document.getElementById('lang');
-    const resultArea = document.getElementById('result');
-    const statusText = document.getElementById('status');
-    const runBtn = document.getElementById('runBtn');
-    const stopBtn = document.getElementById('stopBtn');
+    const API_KEY = "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";
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
-    let finalTranscript = '';
-    let isProcessing = false;
+    async function processAudio() {
+        const fileInput = document.getElementById('audioFile');
+        const btn = document.getElementById('btn');
+        const status = document.getElementById('status');
+        const output = document.getElementById('output');
 
-    if (SpeechRecognition) {
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = false; // মিসিং ও ডুপ্লিকেট রোধ করার জন্য
-
-        recognition.onresult = function(event) {
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    const word = event.results[i][0].transcript.trim();
-                    if (word) {
-                        if (finalTranscript.length > 0 && !finalTranscript.endsWith(' ')) {
-                            finalTranscript += ' ';
-                        }
-                        finalTranscript += word;
-                    }
-                }
-            }
-            resultArea.value = finalTranscript;
-            resultArea.scrollTop = resultArea.scrollHeight;
-        };
-
-        recognition.onerror = function(event) {
-            // সাইলেন্স এরর হলে নিজে রিস্টার্ট করবে
-            if (event.error === 'no-speech' && isProcessing) {
-                try { recognition.start(); } catch(e) {}
-            }
-        };
-
-        recognition.onend = function() {
-            // অডিও চলাকালীন ব্রাউজার নিজে থেকে থামলে আবার রিস্টার্ট করা
-            if (isProcessing) {
-                try { recognition.start(); } catch(e) {}
-            }
-        };
-    }
-
-    audioInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            player.src = URL.createObjectURL(file);
-            statusText.innerText = 'অডিও প্রস্তুত! "শুরু করুন" চাপুন।';
-            statusText.classList.remove('listening');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('অনুগ্রহ করে একটি অডিও ফাইল বেছে নিন!');
+            return;
         }
-    });
 
-    player.onended = function() {
-        stopAudioTranscribe();
-        statusText.innerText = '✅ অডিও শেষ ও লেখা সম্পন্ন!';
-    };
+        const file = fileInput.files[0];
 
-    function startAudioTranscribe() {
-        if (!player.src) return alert('অনুগ্রহ করে আগে একটি অডিও ফাইল বেছে নিন!');
-        if (!recognition) return alert('Chrome ব্রাউজার ব্যবহার করুন।');
+        btn.disabled = true;
+        status.innerText = 'অডিও বিশ্লেষণ হচ্ছে... ৫-১০ সেকেন্ড সময় লাগতে পারে';
+        output.value = '';
 
-        isProcessing = true;
-        runBtn.style.display = 'none';
-        stopBtn.style.display = 'block';
-        statusText.innerText = '🔴 অডিও চলছে এবং গুগল ইঞ্জিন শুনছে...';
-        statusText.classList.add('listening');
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('model', 'whisper-large-v3');
+        formData.append('language', 'bn'); // বাংলা ভাষা ফিক্সড
+        formData.append('response_format', 'json');
 
-        recognition.lang = langSelect.value;
-        finalTranscript = resultArea.value.trim();
+        try {
+            const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${API_KEY}`
+                },
+                body: formData
+            });
 
-        try { recognition.start(); } catch(e) {}
-        player.play();
-    }
+            const data = await res.json();
 
-    function stopAudioTranscribe() {
-        isProcessing = false;
-        player.pause();
-        if (recognition) {
-            try { recognition.stop(); } catch(e) {}
+            if (!res.ok) {
+                throw new Error(data.error ? data.error.message : 'ট্রান্সক্রিপশনে ত্রুটি হয়েছে');
+            }
+
+            output.value = data.text;
+            status.innerText = '✅ রূপান্তর সফল হয়েছে!';
+        } catch (err) {
+            status.innerText = '❌ রূপান্তর ব্যর্থ হয়েছে';
+            alert('সমস্যা: ' + err.message);
+        } finally {
+            btn.disabled = false;
         }
-        runBtn.style.display = 'block';
-        stopBtn.style.display = 'none';
-        statusText.innerText = '⏹️ থামানো হয়েছে।';
-        statusText.classList.remove('listening');
     }
 
     function copyText() {
-        if (!resultArea.value.trim()) return alert('কপি করার মতো টেক্সট নেই!');
-        navigator.clipboard.writeText(resultArea.value);
-        alert('টেক্সট কপি করা হয়েছে!');
+        const text = document.getElementById('output').value;
+        if (!text.trim()) return alert('কপি করার মতো টেক্সট নেই!');
+        navigator.clipboard.writeText(text);
+        alert('টেক্সট কপি হয়েছে!');
     }
 
     function downloadText() {
-        const text = resultArea.value.trim();
-        if (!text) return alert('ডাউনলোড করার মতো টেক্সট নেই!');
-        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `audio_transcript_${Date.now()}.txt`;
-        link.click();
-    }
-
-    function clearText() {
-        finalTranscript = '';
-        resultArea.value = '';
+        const text = document.getElementById('output').value;
+        if (!text.trim()) return alert('ডাউনলোড করার মতো টেক্সট নেই!');
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `audio_text_${Date.now()}.txt`;
+        a.click();
     }
 </script>
 
